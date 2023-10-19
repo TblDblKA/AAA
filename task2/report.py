@@ -2,6 +2,7 @@ from sys import argv  # to check arguments of script
 from os.path import exists  # to check whether the input file exists
 import filecmp  # to check whether an input and output file are the same
 from typing import TextIO, Dict, Set, List
+from collections import defaultdict
 
 INPUT_FILE = 'test.csv'
 SEPARATOR = ';'
@@ -35,14 +36,11 @@ def validate_files(input_filename: str, output_filename: str, separator: str) ->
         line = file.readline()
         line = file.readline()
         splitted_line = line.split(separator)
-        print(splitted_line)
         try:
             int(splitted_line[5])
             if len(splitted_line) != 6:
                 raise ValueError()
-        except ValueError:
-            raise ValueError('Your input file has wrong format')
-        except IndexError:
+        except (ValueError, IndexError):
             raise ValueError('Your input file has wrong format')
 
 
@@ -60,7 +58,7 @@ def parse_parameters() -> tuple[str, str, str]:
     :raises ValueError: when input or output file are not correct
     """
     if len(argv) == 1:
-        validate_files(INPUT_FILE, SEPARATOR)
+        validate_files(INPUT_FILE, OUTPUT_FILE, SEPARATOR)
         return INPUT_FILE, OUTPUT_FILE, SEPARATOR
     parameters_options = {
         'input_filename': {
@@ -135,15 +133,12 @@ def generate_hierarchy(file: TextIO, separator: str) -> Dict[str, Set[str]]:
         department
     :rtype: Dict[str, Set[str]]
     """
-    departments_list = {}
+    departments_list = defaultdict(set)
     for line_number, line in enumerate(file):
         if line_number == 0:
             continue
         _, department, team, *_ = line.split(separator)
-        if department not in departments_list:
-            departments_list[department] = {team}
-        else:
-            departments_list[department].add(team)
+        departments_list[department].add(team)
     return departments_list
 
 
@@ -175,30 +170,19 @@ def generate_report_by_department(file: TextIO, separator: str) -> List[Dict[str
         Средняя зарплата: average salary of employees
     :rtype: List[Dict[str, str | int | float]]
     """
-    departments_dict = {}
+    departments_dict = defaultdict(list)
     for line_number, line in enumerate(file):
         if line_number == 0:
             continue
         _, department, *_, salary = line.split(separator)
-        if department not in departments_dict:
-            departments_dict[department] = {
-                'amount': 1,
-                'min_salary': int(salary),
-                'max_salary': int(salary),
-                'sum_salary': int(salary)
-            }
-        else:
-            departments_dict[department]['amount'] += 1
-            departments_dict[department]['min_salary'] = min(int(salary), departments_dict[department]['min_salary'])
-            departments_dict[department]['max_salary'] = max(int(salary), departments_dict[department]['max_salary'])
-            departments_dict[department]['sum_salary'] += int(salary)
+        departments_dict[department].append(int(salary))
     departments_list = []
-    for department, properties in departments_dict.items():
+    for department, salaries in departments_dict.items():
         departments_list.append({
             'Название': department,
-            'Численность': properties['amount'],
-            'Вилка зарплат': f'{properties["min_salary"]} - {properties["max_salary"]}',
-            'Средняя зарплата': properties['sum_salary'] / properties['amount']
+            'Численность': len(salaries),
+            'Вилка зарплат': f'{min(salaries)} - {max(salaries)}',
+            'Средняя зарплата': sum(salaries) / len(salaries)
         })
     return departments_list
 
