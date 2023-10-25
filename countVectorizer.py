@@ -6,6 +6,7 @@ class CountVectorizer:
         self._word_dict = list()
 
     def fit_transform(self, documents: List[str]) -> List[List[int]]:
+        self._word_dict = list()
         words_matrix = []
         for ind, line in enumerate(documents):
             text = line.replace('\n', ' ')
@@ -19,12 +20,12 @@ class CountVectorizer:
         dt_matrix = list()
         for i, line in enumerate(words_matrix):
             dt_matrix.append(list())
-            for j, word in enumerate(self._word_dict):
+            for word in self._word_dict:
                 dt_matrix[i].append(line.count(word))
         return dt_matrix
 
     def get_feature_name(self) -> List[str]:
-        return list(self._word_dict)
+        return self._word_dict
 
 
 if __name__ == '__main__':
